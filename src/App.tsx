@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 import { firestore } from "./firebase-config";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, getDoc, getDocs } from "firebase/firestore";
 
 const collectionRef = collection(firestore, "invitees");
 
@@ -12,12 +12,28 @@ function App() {
 		type: "couple",
 	};
 
+	type Invitee = {
+		id?: string;
+		fullname: string;
+		type: "couple" | "family";
+	};
+
 	const [invitee, setInvitee] = useState(inviteeInitial);
+	const [invitees, setInvitees] = useState<Invitee[]>([]);
 
 	const saveInvitee = async () => {
 		await addDoc(collectionRef, invitee);
 		window.location.reload();
 	};
+
+	const getInvitees = async () => {
+		const data = await getDocs(collectionRef);
+		setInvitees(data.docs.map((el) => ({ ...el.data(), id: el.id })) as never);
+	};
+
+	useEffect(() => {
+		getInvitees();
+	}, []);
 
 	return (
 		<>
@@ -28,6 +44,12 @@ function App() {
 				onChange={(e) => setInvitee({ ...invitee, fullname: e.target.value })}
 			/>
 			<button onClick={saveInvitee}>Save</button>
+			<hr />
+			{invitees.map((i) => (
+				<p>
+					{i.id} | {i.fullname} | {i.type}
+				</p>
+			))}
 		</>
 	);
 }
